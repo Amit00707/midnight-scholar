@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 };
 
 import ReactQueryProvider from '@/components/providers/ReactQueryProvider';
+import { AuthProvider } from '@/lib/auth-context';
 import { GlassNavbar } from '@/components/layout/GlassNavbar';
 import { Footer } from '@/components/layout/Footer';
 import { CookieBanner } from '@/components/layout/CookieBanner';
@@ -37,15 +38,18 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${newsreader.variable} ${jetbrainsMono.variable} h-full antialiased dark`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]">
+      <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]" suppressHydrationWarning>
         <ReactQueryProvider>
-          <GlassNavbar />
-          <main className="flex-1 shrink-0">
-            {children}
-          </main>
-          <Footer />
-          <CookieBanner />
+          <AuthProvider>
+            <GlassNavbar />
+            <main className="flex-1 shrink-0">
+              {children}
+            </main>
+            <Footer />
+            <CookieBanner />
+          </AuthProvider>
         </ReactQueryProvider>
       </body>
     </html>

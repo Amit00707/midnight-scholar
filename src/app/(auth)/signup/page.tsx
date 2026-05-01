@@ -4,14 +4,27 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/lib/auth-context';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { signup } = useAuth();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Sending to FastAPI Registration:', formData);
-    window.location.href = '/verify';
+    setError('');
+    setIsSubmitting(true);
+
+    const result = await signup(formData.name, formData.email, formData.password);
+
+    if (result.success) {
+      window.location.href = '/dashboard';
+    } else {
+      setError(result.error || 'Registration failed');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -29,6 +42,16 @@ export default function SignupPage() {
             Join the library and unlock intelligent reading.
           </p>
         </div>
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+          >
+            {error}
+          </motion.div>
+        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleRegister}>
           <div className="space-y-4">
@@ -52,14 +75,15 @@ export default function SignupPage() {
               name="password"
               type="password"
               required
+              minLength={8}
               className="relative block w-full rounded-lg border border-[var(--border)] bg-[#0C0A09] px-4 py-3 text-[var(--foreground)] placeholder-[var(--muted)] focus:border-[var(--primary)] focus:outline-none shadow-inner"
               placeholder="Password (8+ characters)"
               onChange={(e) => setFormData({...formData, password: e.target.value})}
             />
           </div>
 
-          <Button type="submit" variant="primary" className="w-full">
-            Register Account
+          <Button type="submit" variant="primary" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? 'Creating Account...' : 'Register Account'}
           </Button>
           
           <div className="mt-6">

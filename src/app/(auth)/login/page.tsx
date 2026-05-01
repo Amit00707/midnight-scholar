@@ -4,16 +4,28 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/lib/auth-context';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate JWT FastAPI Auth Logic
-    console.log('Sending to FastAPI:', { email, password });
-    window.location.href = '/dashboard';
+    setError('');
+    setIsSubmitting(true);
+
+    const result = await login(email, password);
+
+    if (result.success) {
+      window.location.href = '/dashboard';
+    } else {
+      setError(result.error || 'Invalid email or password');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -31,6 +43,16 @@ export default function LoginPage() {
             Log in to continue your reading journey.
           </p>
         </div>
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+          >
+            {error}
+          </motion.div>
+        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           <div className="space-y-4 rounded-md shadow-sm">
@@ -72,8 +94,8 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Button type="submit" variant="primary" className="w-full">
-            Sign In with JWT
+          <Button type="submit" variant="primary" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? 'Signing in...' : 'Sign In'}
           </Button>
 
           <div className="mt-6">
