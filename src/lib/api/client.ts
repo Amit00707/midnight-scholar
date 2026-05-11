@@ -130,7 +130,7 @@ export const api = {
   getProgress: () => apiFetch<ReadingProgress[]>('/progress'),
   updateProgress: (bookId: number, page: number) =>
     apiFetch('/progress', {
-      method: 'POST',
+      method: 'PATCH',
       body: JSON.stringify({ book_id: bookId, current_page: page }),
     }),
 
