@@ -125,10 +125,6 @@ export const api = {
   getBooks: () => apiFetch<Book[]>('/books'),
   getBook: (id: number) => apiFetch<Book>(`/books/${id}`),
   searchBooks: (query: string) => apiFetch<Book[]>(`/search?q=${encodeURIComponent(query)}`),
-  importBooksFromOpenLibrary: (query: string, limit: number = 5) =>
-    apiFetch<Book[]>(`/books/import/openlibrary?query=${encodeURIComponent(query)}&limit=${limit}`, {
-      method: 'POST',
-    }),
 
   // Reading Progress
   getProgress: () => apiFetch<ReadingProgress[]>('/progress'),
