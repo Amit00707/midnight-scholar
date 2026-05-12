@@ -12,6 +12,7 @@ import {
   getBooksByAuthor,
   getBookById,
   getPersonalizedRecommendations,
+  getClassicBooks,
   bookKeys,
 } from "@/lib/api/books"
 
@@ -110,6 +111,22 @@ export function useRecommendations(
     queryFn:    () => getPersonalizedRecommendations(interests),
     enabled:    enabled && interests.length > 0,
     staleTime:  1000 * 60 * 10,
+    retry:      2,
+  })
+}
+
+// ============================================================
+// 7. useClassicBooks
+// Component: src/app/(main)/dashboard/page.tsx
+// ============================================================
+export function useClassicBooks(
+  search: string = "",
+  limit: number = 12
+) {
+  return useQuery({
+    queryKey:   bookKeys.classics(search),
+    queryFn:    () => getClassicBooks(search, limit),
+    staleTime:  1000 * 60 * 30, // 30 minutes
     retry:      2,
   })
 }

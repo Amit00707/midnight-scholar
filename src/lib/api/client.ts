@@ -122,7 +122,7 @@ export const api = {
     }),
 
   // Books
-  getBooks: () => apiFetch<Book[]>('/books'),
+  getBooks: () => apiFetch<Book[]>('/books/library'),
   getBook: (id: number) => apiFetch<Book>(`/books/${id}`),
   searchBooks: (query: string) => apiFetch<Book[]>(`/search?q=${encodeURIComponent(query)}`),
 
@@ -138,9 +138,32 @@ export const api = {
   getLeaderboard: () => apiFetch('/leaderboard'),
   getStreak: () => apiFetch('/streak'),
   getBadges: () => apiFetch('/badges'),
+  getPoints: () => apiFetch('/points'),
 
   // Social
   getComments: (bookId: number) => apiFetch(`/comments/${bookId}`),
+
+  // AI Reader Tools
+  getSummary: (bookId: string | number, pageNumber: number) =>
+    apiFetch<any>('/ai/summary', {
+      method: 'POST',
+      body: JSON.stringify({ book_id: Number(bookId) || 0, page_number: pageNumber }),
+    }),
+  getFlashcards: (bookId: string | number, pageNumber: number) =>
+    apiFetch<any>('/ai/flashcards', {
+      method: 'POST',
+      body: JSON.stringify({ book_id: Number(bookId) || 0, page_number: pageNumber }),
+    }),
+  getQuiz: (bookId: string | number, pageNumber: number) =>
+    apiFetch<any>('/ai/quiz', {
+      method: 'POST',
+      body: JSON.stringify({ book_id: Number(bookId) || 0, page_number: pageNumber }),
+    }),
+  askDoubt: (bookId: string | number, pageNumber: number, question: string) =>
+    apiFetch<any>('/ai/ask', {
+      method: 'POST',
+      body: JSON.stringify({ book_id: Number(bookId) || 0, page_number: pageNumber, question }),
+    }),
 
   // User
   getMe: () => apiFetch<AuthResponse>('/me'),

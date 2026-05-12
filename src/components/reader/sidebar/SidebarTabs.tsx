@@ -16,7 +16,12 @@ const PlaceholderTab = ({ name }: { name: string }) => (
 
 type TabType = 'toc' | 'summary' | 'qa' | 'flashcards' | 'keywords' | 'revision' | 'notes' | 'bookmarks' | 'quiz';
 
-export function SidebarTabs() {
+interface SidebarTabsProps {
+  bookId: string;
+  currentPage: number;
+}
+
+export function SidebarTabs({ bookId, currentPage }: SidebarTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('summary');
 
   const tabs: { id: TabType, label: string, isAI?: boolean }[] = [
@@ -54,9 +59,9 @@ export function SidebarTabs() {
 
       {/* Dynamic Content Pane */}
       <div className="flex-1 overflow-y-auto p-4">
-        {activeTab === 'summary' && <SummaryTab />}
-        {activeTab === 'qa' && <QATab />}
-        {activeTab === 'flashcards' && <FlashcardsTab />}
+        {activeTab === 'summary' && <SummaryTab bookId={bookId} pageNumber={currentPage} />}
+        {activeTab === 'qa' && <QATab bookId={bookId} pageNumber={currentPage} />}
+        {activeTab === 'flashcards' && <FlashcardsTab bookId={bookId} pageNumber={currentPage} />}
         {activeTab === 'revision' && <RevisionTab />}
         {activeTab === 'keywords' && <KeywordsTab />}
         

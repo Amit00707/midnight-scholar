@@ -3,14 +3,28 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SidebarTabs } from '@/components/reader/sidebar/SidebarTabs';
+import { PdfViewer } from '@/components/reader/PdfViewer';
+import { useBookDetail } from '@/lib/hooks/useBooks';
+import Link from 'next/link';
 
 export default function CoreReaderPage({ params }: { params: { id: string } }) {
   const [focusMode, setFocusMode] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const { data: book, isLoading } = useBookDetail(params.id);
+
+  // If the book provides a real PDF (like the Gutenberg Classic books), we use it.
+  // Otherwise, we pass an empty string, which safely triggers our elegant "Simulation Mode Active" UI.
+  // We can pass the mozilla test PDF via a URL param if we ever need it specifically for debug: ?test=true
+  const testUrl = typeof window !== 'undefined' && window.location.search.includes('test=true') 
+    ? 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf' 
+    : '';
+  
+  const pdfUrl = book?.pdf_url || testUrl;
 
   return (
     <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-[var(--background)]">
       
-      {/* 5th Missing Feature: FOCUS MODE OVERLAY */}
+      {/* FOCUS MODE OVERLAY */}
       <AnimatePresence>
         {focusMode && (
           <motion.div
@@ -24,12 +38,19 @@ export default function CoreReaderPage({ params }: { params: { id: string } }) {
 
       <div className="relative z-50 flex h-full w-full">
         {/* Main PDF Rendering Plane */}
-        <div className="flex-1 relative flex flex-col items-center justify-center bg-[#0C0A09] p-4 transition-all duration-500">
+        <div className="flex-1 relative flex flex-col items-center justify-center bg-[#0C0A09] p-4 pt-16 transition-all duration-500">
           
           {/* Top Control Bar */}
-          <div className={`absolute top-4 left-6 z-50 flex items-center gap-4 transition-opacity ${focusMode ? 'opacity-10' : 'opacity-100'}`}>
-            <h1 className="font-serif text-xl font-bold text-[var(--foreground)]">Book ID: {params.id}</h1>
+          <div className={`absolute top-4 left-6 z-50 flex items-center gap-4 transition-opacity ${focusMode ? 'opacity-10 hover:opacity-100' : 'opacity-100'}`}>
+            <Link href={`/book/${params.id}`} className="text-[var(--muted)] hover:text-white transition-colors">
+              ← Back
+            </Link>
+            <div className="w-px h-4 bg-[var(--border)]"></div>
+            <h1 className="font-serif text-xl font-bold text-[var(--foreground)] truncate max-w-md">
+              {isLoading ? 'Loading...' : book?.title || `Book ID: ${params.id}`}
+            </h1>
           </div>
+          
           <div className="absolute top-4 right-6 z-50">
             <button
               onClick={() => setFocusMode(!focusMode)}
@@ -42,34 +63,21 @@ export default function CoreReaderPage({ params }: { params: { id: string } }) {
             </button>
           </div>
 
-          {/* Simulated PDF.js Web Worker Canvas Wrapper */}
-          <div className={`relative w-full max-w-4xl flex-1 bg-[#1C1917] border rounded-lg shadow-2xl transition-all duration-700 mt-12
-            ${focusMode ? 'border-amber-900/50 scale-100 shadow-amber-900/20' : 'border-[var(--border)] scale-95'}`}
+          {/* Actual PDF.js Viewer */}
+          <div className={`relative w-full max-w-5xl h-full transition-all duration-700
+            ${focusMode ? 'scale-100' : 'scale-[0.98]'}`}
           >
-            <div className="absolute inset-0 flex items-center justify-center p-8">
-              <div className="text-center">
-                <p className="text-[var(--muted)]">[ PDF.js Web Worker Canvas Mounting Target ]</p>
-                <p className="font-serif text-3xl text-[var(--foreground)] mt-8 leading-relaxed max-w-2xl mx-auto">
-                  "The rapid expansion of the Republic severely strained the ancestral systems of governance. The Senate found itself managing not a city-state, but an empire spanning the Mediterranean."
-                </p>
-              </div>
-            </div>
-            
-            {/* Cinematic Distraction-Free Highlighting Wrapper */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-[#0C0A09] px-6 py-2 rounded-full border border-[var(--border)] opacity-50 hover:opacity-100 transition-opacity flex gap-4">
-              <button className="text-[var(--muted)] hover:text-white">Page 14</button>
-              <button className="text-[var(--muted)] hover:text-white">Bookmarks</button>
-            </div>
+            <PdfViewer url={pdfUrl} focusMode={focusMode} onPageChange={(page) => setCurrentPage(page)} />
           </div>
         </div>
 
         {/* Dynamic AI Sidebar Wrapper */}
         <motion.div 
           animate={{ width: focusMode ? 0 : 400, opacity: focusMode ? 0 : 1 }}
-          className="h-full border-l border-[var(--border)] overflow-hidden bg-[var(--surface)] z-10"
+          className="h-full border-l border-[var(--border)] overflow-hidden bg-[var(--surface)] z-10 shrink-0"
         >
           <div className="w-[400px] h-full">
-            <SidebarTabs />
+            <SidebarTabs bookId={params.id} currentPage={currentPage} />
           </div>
         </motion.div>
       </div>

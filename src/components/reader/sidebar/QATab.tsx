@@ -2,24 +2,39 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { useAskDoubt } from '@/lib/hooks/useAI';
 
-export function QATab() {
+interface QATabProps {
+  bookId: string;
+  pageNumber: number;
+}
+
+export function QATab({ bookId, pageNumber }: QATabProps) {
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([
     { role: 'ai', text: 'Hello Scholar! What part of this chapter is confusing you?' }
   ]);
 
+  const { mutate: askDoubt, isPending } = useAskDoubt();
+
   const handleAsk = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
+    if (!query.trim() || isPending) return;
 
-    setMessages([...messages, { role: 'user', text: query }]);
+    setMessages((prev) => [...prev, { role: 'user', text: query }]);
     setQuery('');
 
-    // Simulate AI Latency
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { role: 'ai', text: 'I am analyzing the current PDF page context...' }]);
-    }, 800);
+    askDoubt(
+      { bookId, pageNumber, question: query },
+      {
+        onSuccess: (data) => {
+          setMessages((prev) => [...prev, { role: 'ai', text: data.answer }]);
+        },
+        onError: () => {
+          setMessages((prev) => [...prev, { role: 'ai', text: 'Sorry, I encountered an error. Please try again.' }]);
+        }
+      }
+    );
   };
 
   return (
@@ -39,6 +54,13 @@ export function QATab() {
             </div>
           </div>
         ))}
+        {isPending && (
+          <div className="flex justify-start">
+            <div className="p-3 rounded-lg bg-[#2E224F] border border-[#523A97] text-white rounded-bl-none">
+              <span className="animate-pulse">Thinking...</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleAsk} className="flex flex-col gap-2 relative mt-auto border-t border-[var(--border)] pt-4">
@@ -48,12 +70,13 @@ export function QATab() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Ask a question..."
           className="w-full bg-[#0C0A09] border border-[var(--border)] rounded-full px-4 py-2 text-sm text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none"
+          disabled={isPending}
         />
         <div className="flex justify-between items-center px-1">
-          <button type="button" className="text-amber-500 text-sm hover:text-amber-400">
+          <button type="button" className="text-amber-500 text-sm hover:text-amber-400" disabled={isPending}>
             🎙️ Voice Query
           </button>
-          <Button type="submit" variant="primary" size="sm" className="bg-[var(--accent)] text-white hover:bg-violet-500">
+          <Button type="submit" variant="primary" size="sm" className="bg-[var(--accent)] text-white hover:bg-violet-500" disabled={isPending || !query.trim()}>
             Send
           </Button>
         </div>

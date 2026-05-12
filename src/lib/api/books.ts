@@ -204,6 +204,18 @@ export async function getBookById(olId: string): Promise<BookDetail> {
 }
 
 // ============================================================
+// 7. GET CLASSIC BOOKS (Gutendex)
+// ============================================================
+export async function getClassicBooks(search: string = "", limit: number = 12): Promise<{ results: Book[]; total: number }> {
+  const params = new URLSearchParams({ search, limit: String(limit) })
+  const res = await fetch(`${API_BASE}/books/classics?${params}`, {
+    headers: getAuthHeaders(),
+  })
+  if (!res.ok) throw new Error(`Classics fetch failed: ${res.statusText}`)
+  return res.json()
+}
+
+// ============================================================
 // REACT QUERY KEYS
 // Use these in useQuery() calls for consistent caching
 // ============================================================
@@ -212,6 +224,7 @@ export const bookKeys = {
   search:          (q: string)        => ["books", "search", q] as const,
   category:        (cat: string)      => ["books", "category", cat] as const,
   trending:        ()                 => ["books", "trending"]  as const,
+  classics:        (q: string)        => ["books", "classics", q] as const,
   author:          (name: string)     => ["books", "author", name] as const,
   recommendations: (interests: string[]) => ["books", "recommendations", interests] as const,
   detail:          (id: string)       => ["books", "detail", id] as const,

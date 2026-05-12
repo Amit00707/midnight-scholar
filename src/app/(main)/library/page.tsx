@@ -36,19 +36,25 @@ export default function LibraryPage() {
     }
   }
 
-  const displayBooks = books.length > 0
-    ? books.map(b => ({ id: String(b.id), title: b.title, author: b.author }))
-    : [
-        { id: '1', title: 'The Republic', author: 'Plato' },
-        { id: '2', title: 'Critique of Pure Reason', author: 'Immanuel Kant' },
-      ];
+  const displayBooks = books.map(b => ({ 
+    id: String(b.id), 
+    title: b.title, 
+    author: b.author,
+    cover_url: b.cover_url
+  }));
+
+  const readingBooks = books.filter(b => b.progress && b.progress.percentage < 100);
+  const finishedBooks = books.filter(b => b.progress && b.progress.percentage >= 100);
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'all', label: `All Books (${books.length || 12})` },
-    { key: 'reading', label: 'Currently Reading (2)' },
-    { key: 'finished', label: 'Finished (10)' },
-    { key: 'wishlist', label: 'Wishlist (4)' },
+    { key: 'all', label: `All Books (${books.length})` },
+    { key: 'reading', label: `Currently Reading (${readingBooks.length})` },
+    { key: 'finished', label: `Finished (${finishedBooks.length})` },
   ];
+
+  const filteredBooks = activeTab === 'all' ? displayBooks : 
+                        activeTab === 'reading' ? readingBooks : 
+                        activeTab === 'finished' ? finishedBooks : displayBooks;
 
   if (authLoading || loading) {
     return (
@@ -79,7 +85,16 @@ export default function LibraryPage() {
         ))}
       </div>
 
-      <BookGrid books={displayBooks} />
+      {filteredBooks.length > 0 ? (
+        <BookGrid books={filteredBooks.map(b => ({ id: String(b.id), title: b.title, author: b.author, cover_url: b.cover_url }))} />
+      ) : (
+        <div className="text-center py-20 bg-[var(--surface)] border border-[var(--border)] rounded-xl">
+          <p className="text-[var(--muted)] text-lg mb-4">No books found in this category.</p>
+          <button onClick={() => router.push('/search')} className="text-[var(--primary)] hover:underline">
+            Discover new books
+          </button>
+        </div>
+      )}
     </div>
   );
 }
