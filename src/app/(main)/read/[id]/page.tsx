@@ -7,10 +7,12 @@ import { PdfViewer } from '@/components/reader/PdfViewer';
 import { useBookDetail } from '@/lib/hooks/useBooks';
 import Link from 'next/link';
 
-export default function CoreReaderPage({ params }: { params: { id: string } }) {
+export default function CoreReaderPage({ params }: { params: any }) {
+  const resolvedParams = React.use(params) as { id: string };
+  const id = resolvedParams.id;
   const [focusMode, setFocusMode] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const { data: book, isLoading } = useBookDetail(params.id);
+  const { data: book, isLoading } = useBookDetail(id);
 
   // If the book provides a real PDF (like the Gutenberg Classic books), we use it.
   // Otherwise, we pass an empty string, which safely triggers our elegant "Simulation Mode Active" UI.
@@ -42,12 +44,12 @@ export default function CoreReaderPage({ params }: { params: { id: string } }) {
           
           {/* Top Control Bar */}
           <div className={`absolute top-4 left-6 z-50 flex items-center gap-4 transition-opacity ${focusMode ? 'opacity-10 hover:opacity-100' : 'opacity-100'}`}>
-            <Link href={`/book/${params.id}`} className="text-[var(--muted)] hover:text-white transition-colors">
+            <Link href={`/book/${id}`} className="text-[var(--muted)] hover:text-white transition-colors">
               ← Back
             </Link>
             <div className="w-px h-4 bg-[var(--border)]"></div>
             <h1 className="font-serif text-xl font-bold text-[var(--foreground)] truncate max-w-md">
-              {isLoading ? 'Loading...' : book?.title || `Book ID: ${params.id}`}
+              {isLoading ? 'Loading...' : book?.title || `Book ID: ${id}`}
             </h1>
           </div>
           
@@ -67,7 +69,14 @@ export default function CoreReaderPage({ params }: { params: { id: string } }) {
           <div className={`relative w-full max-w-5xl h-full transition-all duration-700
             ${focusMode ? 'scale-100' : 'scale-[0.98]'}`}
           >
-            <PdfViewer url={pdfUrl} focusMode={focusMode} onPageChange={(page) => setCurrentPage(page)} />
+            <PdfViewer 
+              url={pdfUrl} 
+              iaId={book?.ia_id}
+              title={book?.title}
+              focusMode={focusMode} 
+              isBookLoading={isLoading}
+              onPageChange={(page) => setCurrentPage(page)} 
+            />
           </div>
         </div>
 
@@ -77,7 +86,7 @@ export default function CoreReaderPage({ params }: { params: { id: string } }) {
           className="h-full border-l border-[var(--border)] overflow-hidden bg-[var(--surface)] z-10 shrink-0"
         >
           <div className="w-[400px] h-full">
-            <SidebarTabs bookId={params.id} currentPage={currentPage} />
+            <SidebarTabs bookId={id} currentPage={currentPage} pdfUrl={pdfUrl} onPageJump={(page) => setCurrentPage(page)} />
           </div>
         </motion.div>
       </div>

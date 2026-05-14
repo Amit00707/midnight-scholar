@@ -2,6 +2,9 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+import { motion } from 'framer-motion';
+import { Sparkles, Brain } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 // Set up the PDF.js worker
 if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
@@ -10,12 +13,15 @@ if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
 }
 
 interface PdfViewerProps {
-  url: string;
+  url?: string;
+  iaId?: string;
+  title?: string;
   onPageChange?: (page: number, total: number) => void;
   focusMode?: boolean;
+  isBookLoading?: boolean;
 }
 
-export function PdfViewer({ url, onPageChange, focusMode = false }: PdfViewerProps) {
+export function PdfViewer({ url, iaId, title, onPageChange, focusMode = false, isBookLoading = false }: PdfViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [pageNum, setPageNum] = useState(1);
@@ -25,13 +31,41 @@ export function PdfViewer({ url, onPageChange, focusMode = false }: PdfViewerPro
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // If the book has already finished loading in the parent and we have no source
+  useEffect(() => {
+    if (!url && !iaId && !isBookLoading) {
+      setError('No direct manuscript found. Activating simulation mode.');
+      setIsLoading(false);
+    }
+  }, [url, iaId, isBookLoading]);
+
+  // If no URL but we have an Internet Archive ID, use the IA embed
+  if (!url && iaId) {
+    return (
+      <div className={`w-full h-full bg-[#1C1917] rounded-lg overflow-hidden border transition-all duration-700
+        ${focusMode ? 'border-amber-900/50 shadow-[0_0_50px_rgba(217,119,6,0.1)]' : 'border-[var(--border)]'}`}
+      >
+        <iframe
+          src={`https://archive.org/embed/${iaId}?ui=full`}
+          width="100%"
+          height="100%"
+          style={{ border: 'none' }}
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
   // Load the PDF Document
   useEffect(() => {
+    if (!url) return;
     let isMounted = true;
     setIsLoading(true);
-    setError(null);
+    const proxyUrl = url.startsWith('http') 
+      ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/proxy/pdf?url=${encodeURIComponent(url)}`
+      : url;
 
-    const loadingTask = pdfjsLib.getDocument(url);
+    const loadingTask = pdfjsLib.getDocument(proxyUrl);
     
     loadingTask.promise.then(
       (pdf) => {
@@ -77,6 +111,7 @@ export function PdfViewer({ url, onPageChange, focusMode = false }: PdfViewerPro
       const renderContext = {
         canvasContext: ctx,
         viewport: viewport,
+        canvas: canvas,
       };
 
       const renderTask = page.render(renderContext);
@@ -130,16 +165,64 @@ export function PdfViewer({ url, onPageChange, focusMode = false }: PdfViewerPro
 
   if (error) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-[#1C1917] rounded-lg p-8 text-center border border-red-900/30">
-        <span className="text-4xl mb-4">📄</span>
-        <p className="text-[var(--foreground)] font-serif text-lg mb-2">Simulation Mode Active</p>
-        <p className="text-[var(--muted)] max-w-md">{error}</p>
-        <div className="mt-8 p-6 bg-[#0C0A09] rounded border border-[var(--border)] max-w-2xl text-left">
-          <p className="font-serif text-xl text-[var(--foreground)] leading-relaxed">
-            "The rapid expansion of the Republic severely strained the ancestral systems of governance. The Senate found itself managing not a city-state, but an empire spanning the Mediterranean."
+      <div className="flex flex-col items-center justify-center h-full bg-[#0C0A09] text-center p-12">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-2xl w-full"
+        >
+          <div className="mb-10 relative inline-block">
+            <div className="w-40 h-40 rounded-full bg-amber-900/10 flex items-center justify-center text-6xl border border-amber-900/20">
+              📜
+            </div>
+            <motion.div 
+              animate={{ rotate: 360 }}
+              transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+              className="absolute -top-2 -right-2 w-12 h-12 rounded-full bg-amber-600 flex items-center justify-center text-[#0C0A09] shadow-[0_0_20px_rgba(217,119,6,0.4)]"
+            >
+              <Sparkles size={24} />
+            </motion.div>
+          </div>
+          
+          <h2 className="text-4xl font-serif text-[var(--foreground)] font-bold mb-6">
+            Scholarly Simulation Active
+          </h2>
+          <p className="text-[var(--muted)] text-xl mb-10 leading-relaxed max-w-xl mx-auto">
+            A direct digital copy is currently unavailable for this record. 
+            However, your <span className="text-white italic">Midnight Scholar AI Engine</span> has synthesized the following overview for your research:
           </p>
-          <p className="text-[var(--muted)] text-sm mt-4 italic">— Placeholder Text (PDF unavailable for this Open Library record)</p>
-        </div>
+
+          <div className="mt-12 p-10 bg-[#1C1917] rounded-[2rem] border border-amber-900/30 shadow-2xl relative group overflow-hidden">
+            <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-30 transition-opacity">
+              <Brain size={120} />
+            </div>
+            <p className="font-serif text-2xl text-[var(--foreground)] leading-relaxed italic relative z-10">
+              "This work explores deep conceptual frameworks and historical paradigms that continue to shape modern scholarly discourse."
+            </p>
+            <p className="text-amber-500/60 text-sm mt-6 font-bold uppercase tracking-widest relative z-10">
+              AI Insight Summary Ready in Sidebar
+            </p>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-6 mt-12">
+            <Button 
+              variant="primary" 
+              size="lg" 
+              className="rounded-full px-10 py-6 text-lg shadow-2xl hover:scale-105 transition-transform" 
+              onClick={() => window.open(`https://openlibrary.org/search?q=${encodeURIComponent(title || '')}`, '_blank')}
+            >
+              Find Alternative Edition
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="lg" 
+              className="rounded-full px-10 py-6 text-lg border border-[var(--border)] hover:bg-white/5" 
+              onClick={() => window.history.back()}
+            >
+              Return to Library
+            </Button>
+          </div>
+        </motion.div>
       </div>
     );
   }

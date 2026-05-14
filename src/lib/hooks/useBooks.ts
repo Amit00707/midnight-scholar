@@ -30,7 +30,7 @@ export function useBookSearch(
   return useQuery({
     queryKey:   bookKeys.search(query),
     queryFn:    () => searchBooks(query, limit, page),
-    enabled:    enabled && query.length > 0,
+    enabled:    enabled && !!query && query.length > 0,
     staleTime:  1000 * 60 * 5,   // Cache 5 minutes
     retry:      2,
   })
@@ -49,7 +49,7 @@ export function useCategoryBooks(
   return useQuery({
     queryKey:   bookKeys.category(category),
     queryFn:    () => getBooksByCategory(category, limit),
-    enabled:    enabled && category.length > 0,
+    enabled:    enabled && !!category && category.length > 0,
     staleTime:  1000 * 60 * 10,  // Cache 10 minutes
     retry:      2,
   })
@@ -77,7 +77,7 @@ export function useAuthorBooks(authorName: string, limit: number = 12) {
   return useQuery({
     queryKey:   bookKeys.author(authorName),
     queryFn:    () => getBooksByAuthor(authorName, limit),
-    enabled:    authorName.length > 0,
+    enabled:    !!authorName && authorName.length > 0,
     staleTime:  1000 * 60 * 15,  // Cache 15 minutes
     retry:      2,
   })
@@ -91,7 +91,7 @@ export function useBookDetail(olId: string) {
   return useQuery({
     queryKey:   bookKeys.detail(olId),
     queryFn:    () => getBookById(olId),
-    enabled:    olId.length > 0,
+    enabled:    !!olId && olId.length > 0,
     staleTime:  1000 * 60 * 30,  // Cache 30 minutes
     retry:      1,
   })
@@ -109,7 +109,7 @@ export function useRecommendations(
   return useQuery({
     queryKey:   bookKeys.recommendations(interests),
     queryFn:    () => getPersonalizedRecommendations(interests),
-    enabled:    enabled && interests.length > 0,
+    enabled:    enabled && !!interests && interests.length > 0,
     staleTime:  1000 * 60 * 10,
     retry:      2,
   })

@@ -4,7 +4,7 @@
 // Connects Next.js → FastAPI → Open Library
 // ============================================================
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
 // ============================================================
 // TYPESCRIPT INTERFACES
@@ -17,7 +17,8 @@ export interface Book {
   title:          string
   author:         string
   authors:        string[]
-  cover_url:      string
+  cover_url:      string | null
+  cover_url_small?: string | null
   cover_id:       number | null
   isbn:           string | null
   category:       string
@@ -32,6 +33,9 @@ export interface Book {
   edition_count:  number
   has_ebook:      boolean
   preview_url:    string | null
+  source?:        string
+  ia_id?:         string
+  pdf_url?:       string
   // Recommendation extra field
   recommended_because?: string
 }
@@ -71,7 +75,7 @@ export interface RecommendationResponse {
 // ============================================================
 function getAuthHeaders(): HeadersInit {
   if (typeof window === "undefined") return { "Content-Type": "application/json" };
-  const token = localStorage.getItem("access_token")
+  const token = localStorage.getItem("ms_access_token")
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

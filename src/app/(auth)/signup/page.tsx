@@ -20,7 +20,7 @@ export default function SignupPage() {
     const result = await signup(formData.name, formData.email, formData.password);
 
     if (result.success) {
-      window.location.href = '/onboarding/first-book';
+      window.location.href = '/onboarding';
     } else {
       setError(result.error || 'Registration failed');
       setIsSubmitting(false);

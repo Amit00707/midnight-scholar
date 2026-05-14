@@ -7,6 +7,12 @@
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
+export function getWsUrl(endpoint: string): string {
+  const base = API_BASE.replace('http', 'ws');
+  return `${base}${endpoint}`;
+}
+
+
 // ─── Token Helpers ───────────────────────────────────────────
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -123,47 +129,141 @@ export const api = {
 
   // Books
   getBooks: () => apiFetch<Book[]>('/books/library'),
-  getBook: (id: number) => apiFetch<Book>(`/books/${id}`),
-  searchBooks: (query: string) => apiFetch<Book[]>(`/search?q=${encodeURIComponent(query)}`),
+  getBook: (id: string | number) => apiFetch<any>(`/books/${id}`),
+  searchBooks: (query: string) => apiFetch<any>(`/books/search?q=${encodeURIComponent(query)}`),
+  getTrending: (limit: number = 12) => apiFetch<any>(`/books/trending?limit=${limit}`),
+  getClassics: (search: string = "", limit: number = 12) => 
+    apiFetch<any>(`/books/classics?search=${encodeURIComponent(search)}&limit=${limit}`),
+  getRecommendations: (interests: string[], limitPerCategory: number = 4) => 
+    apiFetch<any>('/books/recommendations', { 
+      method: 'POST', 
+      body: JSON.stringify({ interests, limit_per_category: limitPerCategory }) 
+    }),
+  getBooksByCategory: (category: string, limit: number = 12) => 
+    apiFetch<any>(`/books/category/${category}?limit=${limit}`),
 
   // Reading Progress
   getProgress: () => apiFetch<ReadingProgress[]>('/progress'),
-  updateProgress: (bookId: number, page: number) =>
+  updateProgress: (bookId: string | number, page: number) =>
     apiFetch('/progress', {
       method: 'PATCH',
-      body: JSON.stringify({ book_id: bookId, current_page: page }),
+      body: JSON.stringify({ book_id: String(bookId), current_page: page }),
     }),
+
+  // Notes and Bookmarks
+  getBookmarks: (bookId: string | number) => apiFetch<{ bookmarks: any[] }>(`/bookmarks/${bookId}`),
+  addBookmark: (bookId: string | number, page: number, label: string = '') => 
+    apiFetch('/bookmarks', { method: 'POST', body: JSON.stringify({ book_id: String(bookId), page_number: page, label }) }),
+  deleteBookmark: (bookmarkId: number) => 
+    apiFetch(`/bookmarks/${bookmarkId}`, { method: 'DELETE' }),
+    
+  getNotes: (bookId: string | number) => apiFetch<{ notes: any[] }>(`/notes/${bookId}`),
+  addNote: (bookId: string | number, page: number, content: string) => 
+    apiFetch('/notes', { method: 'POST', body: JSON.stringify({ book_id: String(bookId), page_number: page, content }) }),
+  deleteNote: (noteId: number) => 
+    apiFetch(`/notes/${noteId}`, { method: 'DELETE' }),
 
   // Gamification
   getLeaderboard: () => apiFetch('/leaderboard'),
-  getStreak: () => apiFetch('/streak'),
+  getStreak: () => apiFetch<{ current_streak: number; longest_streak: number }>('/streak'),
   getBadges: () => apiFetch('/badges'),
-  getPoints: () => apiFetch('/points'),
+  getPoints: () => apiFetch<{ total_points: number }>('/points'),
 
   // Social
+  getSocialFeed: () => apiFetch('/feed'),
   getComments: (bookId: number) => apiFetch(`/comments/${bookId}`),
+  createPost: (content: string) =>
+    apiFetch('/posts', {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
 
   // AI Reader Tools
   getSummary: (bookId: string | number, pageNumber: number) =>
-    apiFetch<any>('/ai/summary', {
+    apiFetch<any>('/summary', {
       method: 'POST',
-      body: JSON.stringify({ book_id: Number(bookId) || 0, page_number: pageNumber }),
+      body: JSON.stringify({ book_id: String(bookId), page_number: pageNumber }),
     }),
   getFlashcards: (bookId: string | number, pageNumber: number) =>
-    apiFetch<any>('/ai/flashcards', {
+    apiFetch<any>('/flashcards', {
       method: 'POST',
-      body: JSON.stringify({ book_id: Number(bookId) || 0, page_number: pageNumber }),
+      body: JSON.stringify({ book_id: String(bookId), page_number: pageNumber }),
     }),
   getQuiz: (bookId: string | number, pageNumber: number) =>
-    apiFetch<any>('/ai/quiz', {
+    apiFetch<any>('/quiz', {
       method: 'POST',
-      body: JSON.stringify({ book_id: Number(bookId) || 0, page_number: pageNumber }),
+      body: JSON.stringify({ book_id: String(bookId), page_number: pageNumber }),
     }),
   askDoubt: (bookId: string | number, pageNumber: number, question: string) =>
-    apiFetch<any>('/ai/ask', {
+    apiFetch<any>('/ask', {
       method: 'POST',
-      body: JSON.stringify({ book_id: Number(bookId) || 0, page_number: pageNumber, question }),
+      body: JSON.stringify({ book_id: String(bookId), page_number: pageNumber, question }),
     }),
+  getKeywords: (bookId: string | number, pageNumber: number) =>
+    apiFetch<any>('/keywords', {
+      method: 'POST',
+      body: JSON.stringify({ book_id: String(bookId), page_number: pageNumber }),
+    }),
+  libraryChat: (query: string) =>
+    apiFetch<any>('/library-chat', {
+      method: 'POST',
+      body: JSON.stringify({ query }),
+    }),
+
+  // Teacher
+  getClasses: () => apiFetch<{ classes: any[] }>('/classes'),
+  createClass: (name: string, description?: string) => 
+    apiFetch('/classes', { method: 'POST', body: JSON.stringify({ name, description }) }),
+  enrollStudent: (classId: number, studentId: number) => 
+    apiFetch(`/classes/${classId}/enroll?student_id=${studentId}`, { method: 'POST' }),
+  createAssignment: (classId: number, bookId: string, title: string, description?: string, dueDate?: string) => 
+    apiFetch(`/classes/${classId}/assign`, { method: 'POST', body: JSON.stringify({ book_id: bookId, title, description, due_date: dueDate }) }),
+  sendAnnouncement: (classId: number, title: string, content: string) => 
+    apiFetch(`/classes/${classId}/announce`, { method: 'POST', body: JSON.stringify({ title, content }) }),
+  getQuizResults: () => apiFetch<{ results: any[] }>('/quiz-results'),
+
+  // ─── Flashcards (SM-2 Spaced Repetition) ───────────────────
+  generateFlashcards: (bookId: string | number, pageNumber: number) =>
+    apiFetch<any>('/flashcards/generate', {
+      method: 'POST',
+      body: JSON.stringify({ book_id: String(bookId), page_number: pageNumber }),
+    }),
+
+  getDueFlashcards: (bookId?: string, limit: number = 50) =>
+    apiFetch<any>(`/flashcards/due?${bookId ? `book_id=${bookId}&` : ''}limit=${limit}`),
+
+  getFlashcardDeck: (bookId?: string, page: number = 1, perPage: number = 50) =>
+    apiFetch<any>(`/flashcards/deck?${bookId ? `book_id=${bookId}&` : ''}page=${page}&per_page=${perPage}`),
+
+  reviewFlashcard: (cardId: number, rating: number, timeSpentMs?: number) =>
+    apiFetch<any>(`/flashcards/${cardId}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ rating, time_spent_ms: timeSpentMs }),
+    }),
+
+  createManualFlashcard: (bookId: string, front: string, back: string, sourcePage?: number, tags?: string) =>
+    apiFetch<any>('/flashcards/manual', {
+      method: 'POST',
+      body: JSON.stringify({ book_id: bookId, front, back, source_page: sourcePage, tags }),
+    }),
+
+  updateFlashcard: (cardId: number, updates: { front?: string; back?: string; tags?: string; is_suspended?: boolean }) =>
+    apiFetch<any>(`/flashcards/${cardId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    }),
+
+  deleteFlashcard: (cardId: number) =>
+    apiFetch<any>(`/flashcards/${cardId}`, { method: 'DELETE' }),
+
+  toggleSuspendFlashcard: (cardId: number) =>
+    apiFetch<any>(`/flashcards/${cardId}/suspend`, { method: 'POST' }),
+
+  getFlashcardStats: () =>
+    apiFetch<any>('/flashcards/stats'),
+
+  // Admin
+  getMonitoring: () => apiFetch<any>('/admin/monitoring'),
 
   // User
   getMe: () => apiFetch<AuthResponse>('/me'),
@@ -179,13 +279,21 @@ export interface AuthResponse {
 }
 
 export interface Book {
-  id: number;
+  id: string | number;
   title: string;
   author: string;
   category?: string;
   cover_url?: string;
   total_pages?: number;
   description?: string;
+  progress?: {
+    current_page: number;
+    total_pages: number;
+    percentage: number;
+  };
+  ia_id?: string;
+  pdf_url?: string;
+  epub_url?: string;
 }
 
 export interface ReadingProgress {

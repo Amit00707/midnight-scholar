@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
@@ -13,9 +13,22 @@ export default function OnboardingPage() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    const saved = localStorage.getItem('midnight_scholar_interests');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) setSelectedInterests(parsed);
+      } catch (e) {
+        console.error('Failed to load interests:', e);
+      }
+    }
+  }, []);
+
   const interests = [
     'Philosophy', 'Science', 'Technology', 'History', 'Psychology',
-    'Business', 'Fiction', 'Fantasy', 'Self-Help', 'Biography'
+    'Business', 'Fiction', 'Fantasy', 'Self-Help', 'Biography',
+    'Social Media', 'Education'
   ];
 
   const toggleInterest = (interest: string) => {

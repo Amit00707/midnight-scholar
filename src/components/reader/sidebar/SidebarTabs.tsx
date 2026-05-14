@@ -6,22 +6,23 @@ import { QATab } from './QATab';
 import { FlashcardsTab } from './FlashcardsTab';
 import { RevisionTab } from './RevisionTab';
 import { KeywordsTab } from './KeywordsTab';
+import { QuizTab } from './QuizTab';
+import { NotesTab } from './NotesTab';
+import { BookmarksTab } from './BookmarksTab';
+import { TOCTab } from './TOCTab';
+import { DiscussionTab } from './DiscussionTab';
 
-// Skeleton placeholders for remaining standard tabs
-const PlaceholderTab = ({ name }: { name: string }) => (
-  <div className="p-4 text-[var(--muted)] text-sm text-center mt-10">
-    {name} Tab logic loading...
-  </div>
-);
+type TabType = 'toc' | 'summary' | 'qa' | 'flashcards' | 'keywords' | 'revision' | 'notes' | 'bookmarks' | 'quiz' | 'discussion';
 
-type TabType = 'toc' | 'summary' | 'qa' | 'flashcards' | 'keywords' | 'revision' | 'notes' | 'bookmarks' | 'quiz';
 
 interface SidebarTabsProps {
   bookId: string;
   currentPage: number;
+  pdfUrl?: string;
+  onPageJump?: (page: number) => void;
 }
 
-export function SidebarTabs({ bookId, currentPage }: SidebarTabsProps) {
+export function SidebarTabs({ bookId, currentPage, pdfUrl, onPageJump }: SidebarTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('summary');
 
   const tabs: { id: TabType, label: string, isAI?: boolean }[] = [
@@ -34,6 +35,7 @@ export function SidebarTabs({ bookId, currentPage }: SidebarTabsProps) {
     { id: 'notes', label: 'Notes' },
     { id: 'bookmarks', label: 'Bookmarks' },
     { id: 'quiz', label: 'Quiz', isAI: true },
+    { id: 'discussion', label: 'Discussion' },
   ];
 
   return (
@@ -63,13 +65,12 @@ export function SidebarTabs({ bookId, currentPage }: SidebarTabsProps) {
         {activeTab === 'qa' && <QATab bookId={bookId} pageNumber={currentPage} />}
         {activeTab === 'flashcards' && <FlashcardsTab bookId={bookId} pageNumber={currentPage} />}
         {activeTab === 'revision' && <RevisionTab />}
-        {activeTab === 'keywords' && <KeywordsTab />}
-        
-        {/* Placeholder standard tabs waiting for HTML integration */}
-        {activeTab === 'toc' && <PlaceholderTab name="Table of Contents" />}
-        {activeTab === 'notes' && <PlaceholderTab name="User Notes" />}
-        {activeTab === 'bookmarks' && <PlaceholderTab name="Bookmarks" />}
-        {activeTab === 'quiz' && <PlaceholderTab name="Smart Quiz" />}
+        {activeTab === 'keywords' && <KeywordsTab bookId={bookId} pageNumber={currentPage} />}
+        {activeTab === 'quiz' && <QuizTab bookId={bookId} pageNumber={currentPage} />}
+        {activeTab === 'notes' && <NotesTab bookId={bookId} pageNumber={currentPage} />}
+        {activeTab === 'bookmarks' && <BookmarksTab bookId={bookId} pageNumber={currentPage} />}
+        {activeTab === 'discussion' && <DiscussionTab bookId={bookId} />}
+        {activeTab === 'toc' && <TOCTab bookId={bookId} pdfUrl={pdfUrl} currentPage={currentPage} onPageJump={onPageJump} />}
       </div>
     </div>
   );
