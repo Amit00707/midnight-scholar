@@ -21,7 +21,7 @@ export default function LoginPage() {
     const result = await login(email, password);
 
     if (result.success) {
-      window.location.href = '/dashboard';
+      window.location.href = result.role === 'admin' ? '/admin/dashboard' : '/dashboard';
     } else {
       setError(result.error || 'Invalid email or password');
       setIsSubmitting(false);
@@ -97,6 +97,10 @@ export default function LoginPage() {
           <Button type="submit" variant="primary" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Signing in...' : 'Sign In'}
           </Button>
+
+          <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-200">
+            Admin access? <Link href="/admin/login" className="font-semibold text-red-400 hover:text-red-300">Open admin login</Link>
+          </div>
 
           <div className="mt-6">
             <div className="relative">

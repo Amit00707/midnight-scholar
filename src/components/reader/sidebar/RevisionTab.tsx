@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFlashcardStats } from '@/lib/hooks/useFlashcardDeck';
+import { api } from '@/lib/api/client';
 
 export function RevisionTab() {
   const { data: stats, isLoading } = useFlashcardStats();
@@ -118,6 +119,27 @@ export function RevisionTab() {
         </p>
       </div>
 
+      {/* Consistency Chart */}
+      <div className="mb-8">
+        <h4 className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider mb-3">Reading Consistency</h4>
+        <div className="flex items-end gap-1 h-12">
+          {[40, 70, 20, 90, 100, 60, 80].map((h, i) => (
+            <div 
+              key={i} 
+              className="flex-1 rounded-t-sm bg-gradient-to-t from-[var(--primary)] to-amber-400 opacity-60 hover:opacity-100 transition-opacity"
+              style={{ height: `${h}%` }}
+            />
+          ))}
+        </div>
+        <div className="flex justify-between mt-1 text-[10px] text-[var(--muted)] font-mono">
+          <span>MON</span>
+          <span>SUN</span>
+        </div>
+      </div>
+
+      {/* Weak Topics / Hotspots */}
+      <WeakTopicsList />
+
       {/* Per-Book Breakdown */}
       {books.length > 0 && (
         <div>
@@ -155,6 +177,49 @@ export function RevisionTab() {
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+function WeakTopicsList() {
+  const [weakTopics, setWeakTopics] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    async function load() {
+      try {
+        const res = await api.getWeakTopics();
+        setWeakTopics(res.weak_topics || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  if (loading) return null;
+  if (weakTopics.length === 0) return null;
+
+  return (
+    <div className="mb-6">
+      <h4 className="text-sm font-bold text-red-400 mb-3 flex items-center gap-2">
+        ⚠️ Attention Needed
+      </h4>
+      <div className="space-y-2">
+        {weakTopics.map((topic, i) => (
+          <div key={i} className="bg-red-500/10 border border-red-900/30 p-3 rounded-lg flex justify-between items-center">
+            <div>
+              <p className="text-xs font-bold text-red-200">Book #{topic.book_id}</p>
+              <p className="text-[10px] text-red-300/70">Struggling on Page {topic.page_number}</p>
+            </div>
+            <div className="text-xs font-bold text-red-400">
+              {topic.struggle_score} failures
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

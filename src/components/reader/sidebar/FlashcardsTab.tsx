@@ -12,9 +12,10 @@ import {
 interface FlashcardsTabProps {
   bookId: string;
   pageNumber: number;
+  selectedText?: string;
 }
 
-export function FlashcardsTab({ bookId, pageNumber }: FlashcardsTabProps) {
+export function FlashcardsTab({ bookId, pageNumber, selectedText }: FlashcardsTabProps) {
   const [flipped, setFlipped] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [mode, setMode] = useState<'generate' | 'review' | 'create'>('generate');
@@ -47,8 +48,12 @@ export function FlashcardsTab({ bookId, pageNumber }: FlashcardsTabProps) {
     cardStartTime.current = Date.now();
   }, [currentIndex, flipped]);
 
-  const handleGenerate = () => {
-    generateMutation.mutate({ bookId, pageNumber });
+  const handleGenerate = (useSelection: boolean = false) => {
+    generateMutation.mutate({ 
+      bookId, 
+      pageNumber, 
+      context: useSelection ? selectedText : undefined 
+    });
     setMode('generate');
   };
 
@@ -144,12 +149,23 @@ export function FlashcardsTab({ bookId, pageNumber }: FlashcardsTabProps) {
             <p className="text-[var(--muted)] text-sm mb-4">
               Generate flashcards from this page and save them to your deck.
             </p>
-            <button
-              onClick={handleGenerate}
-              className="px-4 py-2 bg-[var(--primary)] text-[#0C0A09] rounded-lg font-medium text-sm hover:opacity-90"
-            >
-              Generate & Save
-            </button>
+            <div className="flex flex-col gap-2 w-full px-4">
+              <button
+                onClick={() => handleGenerate(false)}
+                className="px-4 py-2 bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--foreground)] rounded-lg font-medium text-sm hover:bg-[#292524]"
+              >
+                Generate from Full Page
+              </button>
+              
+              {selectedText && (
+                <button
+                  onClick={() => handleGenerate(true)}
+                  className="px-4 py-2 bg-[var(--accent)] text-[#0C0A09] rounded-lg font-bold text-sm hover:opacity-90 shadow-lg animate-pulse"
+                >
+                  ✨ Generate from Selection
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -304,7 +320,7 @@ export function FlashcardsTab({ bookId, pageNumber }: FlashcardsTabProps) {
         {/* Regenerate button (generate mode) */}
         {mode === 'generate' && generatedCards.length > 0 && (
           <button
-            onClick={handleGenerate}
+            onClick={() => handleGenerate()}
             disabled={generateMutation.isPending}
             className="w-full py-2 bg-[var(--surface-hover)] text-[var(--foreground)] rounded-lg text-xs"
           >

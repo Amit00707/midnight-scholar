@@ -44,3 +44,27 @@ body {
   display: none; /* Chrome, Safari and Opera */
 }
 
+
+/* 📄 PDF.js TEXT LAYER: Standard selection behavior */
+.textLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 0.2;
+  line-height: 1;
+}
+
+.textLayer > span {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.textLayer ::selection {
+  background: rgba(217, 119, 6, 0.4);
+}

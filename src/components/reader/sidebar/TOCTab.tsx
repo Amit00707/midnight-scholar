@@ -32,6 +32,7 @@ export function TOCTab({ bookId, pdfUrl, currentPage, onPageJump }: TOCTabProps)
 
     async function loadOutline() {
       try {
+        // If the URL is our local proxy, it might fail for protected books
         const loadingTask = pdfjsLib.getDocument(pdfUrl!);
         const pdf = await loadingTask.promise;
         const rawOutline = await pdf.getOutline();
@@ -50,7 +51,12 @@ export function TOCTab({ bookId, pdfUrl, currentPage, onPageJump }: TOCTabProps)
       } catch (err) {
         if (!cancelled) {
           console.error('TOC load error:', err);
-          setError('Could not extract table of contents.');
+          // If it's a fetch error, it's likely a CORS/Proxy issue for a protected book
+          if (err instanceof Error && err.message.includes('fetch')) {
+            setError('This book is protected or restricted. Table of Contents cannot be extracted automatically.');
+          } else {
+            setError('Could not extract table of contents.');
+          }
         }
       } finally {
         if (!cancelled) setIsLoading(false);

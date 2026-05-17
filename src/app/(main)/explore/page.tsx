@@ -15,11 +15,35 @@ const categories = [
   { id: "Science", icon: "⚛️" },
   { id: "History", icon: "📜" },
   { id: "Psychology", icon: "🧠" },
+  { id: "Physics", icon: "🌌" },
   { id: "Technology", icon: "💻" },
-  { id: "Fiction", icon: "🖋️" },
+  { id: "Social Media", icon: "📱" },
+  { id: "Education", icon: "🎓" },
   { id: "Business", icon: "📈" },
-  { id: "Art", icon: "🎨" }
+  { id: "Art", icon: "🎨" },
+  { id: "Fiction", icon: "🖋️" }
 ];
+
+function getBookIdentity(book: any, index: number) {
+  return book?.id || book?.ol_key || `${book?.title || 'book'}-${index}`;
+}
+
+function uniqueBooks(books: any[] | undefined) {
+  if (!books) return [];
+
+  const seen = new Set<string>();
+
+  return books.filter((book, index) => {
+    const identity = getBookIdentity(book, index);
+
+    if (seen.has(identity)) {
+      return false;
+    }
+
+    seen.add(identity);
+    return true;
+  });
+}
 
 export default function ExplorePage() {
   const [activeCategory, setActiveCategory] = useState("All");
@@ -129,8 +153,8 @@ export default function ExplorePage() {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-            {trending?.results?.slice(0, 5).map((book: any, idx: number) => (
-              <BookCard key={book.id} book={book} delay={idx * 0.1} />
+            {uniqueBooks(trending?.results).slice(0, 5).map((book: any, idx: number) => (
+              <BookCard key={getBookIdentity(book, idx)} book={book} delay={idx * 0.1} />
             ))}
           </div>
         </div>
@@ -149,8 +173,8 @@ export default function ExplorePage() {
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-              {recommendations.results.slice(0, 5).map((book: any, idx: number) => (
-                <BookCard key={book.id} book={book} delay={idx * 0.1} />
+              {uniqueBooks(recommendations.results).slice(0, 5).map((book: any, idx: number) => (
+                <BookCard key={getBookIdentity(book, idx)} book={book} delay={idx * 0.1} />
               ))}
             </div>
           </div>
@@ -195,8 +219,8 @@ export default function ExplorePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                  {categoryBooks?.results?.map((book: any, idx: number) => (
-                    <BookCard key={book.id} book={book} delay={idx * 0.05} />
+                  {uniqueBooks(categoryBooks?.results).map((book: any, idx: number) => (
+                    <BookCard key={getBookIdentity(book, idx)} book={book} delay={idx * 0.05} />
                   ))}
                 </div>
               )}
@@ -214,12 +238,14 @@ export default function ExplorePage() {
                 <h2 className="text-4xl font-serif text-[var(--foreground)] font-bold mb-4">The Great Classics</h2>
                 <p className="text-[var(--muted)]">Timeless masterpieces available with high-quality free PDFs. Dive into the foundations of literature and thought.</p>
               </div>
-              <Button variant="ghost" className="text-amber-500 font-bold border border-amber-900/30">View Entire Collection →</Button>
+              <Link href="/search">
+                <Button variant="ghost" className="text-amber-500 font-bold border border-amber-900/30">View Entire Collection →</Button>
+              </Link>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-5 gap-8 relative z-10">
-              {classics?.results?.slice(0, 5).map((book: any, idx: number) => (
-                <BookCard key={book.id} book={book} delay={idx * 0.1} />
+              {uniqueBooks(classics?.results).slice(0, 5).map((book: any, idx: number) => (
+                <BookCard key={getBookIdentity(book, idx)} book={book} delay={idx * 0.1} />
               ))}
             </div>
           </div>

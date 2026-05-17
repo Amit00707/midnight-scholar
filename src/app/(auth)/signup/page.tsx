@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/lib/auth-context';
 
 export default function SignupPage() {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'student' });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signup } = useAuth();
@@ -17,7 +17,7 @@ export default function SignupPage() {
     setError('');
     setIsSubmitting(true);
 
-    const result = await signup(formData.name, formData.email, formData.password);
+    const result = await signup(formData.name, formData.email, formData.password, formData.role);
 
     if (result.success) {
       window.location.href = '/onboarding';
@@ -80,6 +80,37 @@ export default function SignupPage() {
               placeholder="Password (8+ characters)"
               onChange={(e) => setFormData({...formData, password: e.target.value})}
             />
+
+            {/* Role Selection */}
+            <div className="space-y-2">
+              <label className="text-sm text-[var(--muted)]">I am a:</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({...formData, role: 'student'})}
+                  className={`p-3 rounded-lg border transition-all ${
+                    formData.role === 'student'
+                      ? 'border-amber-500 bg-amber-500/10 text-amber-400'
+                      : 'border-[var(--border)] bg-[#0C0A09] text-[var(--muted)] hover:border-amber-500/50'
+                  }`}
+                >
+                  <div className="text-lg mb-1">🎓</div>
+                  <div className="font-medium">Student</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({...formData, role: 'teacher'})}
+                  className={`p-3 rounded-lg border transition-all ${
+                    formData.role === 'teacher'
+                      ? 'border-amber-500 bg-amber-500/10 text-amber-400'
+                      : 'border-[var(--border)] bg-[#0C0A09] text-[var(--muted)] hover:border-amber-500/50'
+                  }`}
+                >
+                  <div className="text-lg mb-1">👨‍🏫</div>
+                  <div className="font-medium">Teacher</div>
+                </button>
+              </div>
+            </div>
           </div>
 
           <Button type="submit" variant="primary" className="w-full" disabled={isSubmitting}>

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SidebarTabs } from '@/components/reader/sidebar/SidebarTabs';
 import { PdfViewer } from '@/components/reader/PdfViewer';
 import { useBookDetail } from '@/lib/hooks/useBooks';
+import { useBookProgress, useUpdateProgress } from '@/lib/hooks/useReader';
 import Link from 'next/link';
 
 export default function CoreReaderPage({ params }: { params: any }) {
@@ -12,7 +13,15 @@ export default function CoreReaderPage({ params }: { params: any }) {
   const id = resolvedParams.id;
   const [focusMode, setFocusMode] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedText, setSelectedText] = useState("");
   const { data: book, isLoading } = useBookDetail(id);
+  const { data: progress } = useBookProgress(id);
+  const { mutate: updateProgress } = useUpdateProgress();
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    updateProgress({ bookId: id, page });
+  };
 
   // If the book provides a real PDF (like the Gutenberg Classic books), we use it.
   // Otherwise, we pass an empty string, which safely triggers our elegant "Simulation Mode Active" UI.
@@ -75,7 +84,9 @@ export default function CoreReaderPage({ params }: { params: any }) {
               title={book?.title}
               focusMode={focusMode} 
               isBookLoading={isLoading}
-              onPageChange={(page) => setCurrentPage(page)} 
+              initialPage={progress?.current_page || 1}
+              onPageChange={handlePageChange} 
+              onTextSelect={setSelectedText}
             />
           </div>
         </div>
@@ -86,7 +97,13 @@ export default function CoreReaderPage({ params }: { params: any }) {
           className="h-full border-l border-[var(--border)] overflow-hidden bg-[var(--surface)] z-10 shrink-0"
         >
           <div className="w-[400px] h-full">
-            <SidebarTabs bookId={id} currentPage={currentPage} pdfUrl={pdfUrl} onPageJump={(page) => setCurrentPage(page)} />
+            <SidebarTabs 
+              bookId={id} 
+              currentPage={currentPage} 
+              pdfUrl={pdfUrl} 
+              selectedText={selectedText}
+              onPageJump={(page) => setCurrentPage(page)} 
+            />
           </div>
         </motion.div>
       </div>

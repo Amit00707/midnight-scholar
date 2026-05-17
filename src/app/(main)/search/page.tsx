@@ -7,7 +7,7 @@ import { Search, Filter, BookOpen, Star, Sparkles, ArrowRight, Loader2 } from 'l
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 
-const categories = ["All", "Philosophy", "Science", "History", "Psychology", "Technology", "Social Media", "Education", "Fiction"];
+const categories = ["All", "Philosophy", "Science", "History", "Psychology", "Physics", "Technology", "Social Media", "Education", "Business", "Art", "Fiction"];
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
@@ -16,8 +16,8 @@ export default function SearchPage() {
   // 1. Fetch by Search Query (Only if query is not empty)
   const { data: searchData, isLoading: isSearchLoading } = useBookSearch(query, 30, 1, !!query);
   
-  // 2. Fetch by Category (Only if category is selected and no active query)
-  const isCategoryMode = !query && activeCategory !== "All";
+  // 2. Fetch by Category (Only if no active query)
+  const isCategoryMode = !query;
   const { data: categoryData, isLoading: isCategoryLoading } = useCategoryBooks(
     activeCategory,
     30,
@@ -85,7 +85,7 @@ export default function SearchPage() {
 
       {/* Results Section */}
       <AnimatePresence mode="wait">
-        {(query || activeCategory !== "All") ? (
+        {true ? (
           <motion.div
             key={`results-${activeCategory}-${query}`}
             initial={{ opacity: 0 }}
@@ -112,7 +112,7 @@ export default function SearchPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {results.map((book: any, idx: number) => (
                       <motion.div
-                        key={book.id || book.ol_key || idx}
+                        key={`${book.id ?? book.ol_key ?? 'book'}-${idx}`}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.03 }}

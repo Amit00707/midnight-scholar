@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+// @ts-ignore - TextLayer might not be in the old @types/pdfjs-dist
+import { TextLayer, GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 import { motion } from 'framer-motion';
 import { Sparkles, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 // Set up the PDF.js worker
-if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  // Using mjs for v3+ or matching version
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+if (typeof window !== 'undefined' && !GlobalWorkerOptions.workerSrc) {
+  GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 }
 
 interface PdfViewerProps {
@@ -17,19 +18,31 @@ interface PdfViewerProps {
   iaId?: string;
   title?: string;
   onPageChange?: (page: number, total: number) => void;
+  onTextSelect?: (text: string) => void;
+  initialPage?: number;
   focusMode?: boolean;
   isBookLoading?: boolean;
 }
 
-export function PdfViewer({ url, iaId, title, onPageChange, focusMode = false, isBookLoading = false }: PdfViewerProps) {
+export function PdfViewer({ url, iaId, title, onPageChange, onTextSelect, initialPage, focusMode = false, isBookLoading = false }: PdfViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const textLayerRef = useRef<HTMLDivElement>(null);
+  
+  const handleTextSelection = () => {
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) {
+      if (onTextSelect) onTextSelect(selection.toString());
+    }
+  };
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [pageNum, setPageNum] = useState(1);
+  const [hasInitialJumped, setHasInitialJumped] = useState(false);
   const [pageRendering, setPageRendering] = useState(false);
   const [pageNumPending, setPageNumPending] = useState<number | null>(null);
   const [scale, setScale] = useState(1.2);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
 
   // If the book has already finished loading in the parent and we have no source
   useEffect(() => {
@@ -39,8 +52,9 @@ export function PdfViewer({ url, iaId, title, onPageChange, focusMode = false, i
     }
   }, [url, iaId, isBookLoading]);
 
-  // If no URL but we have an Internet Archive ID, use the IA embed
-  if (!url && iaId) {
+  // If we have an Internet Archive ID, we prefer the official IA Embed.
+  // Direct PDF downloads from IA (archive.org/download/...) often return 401/403 for protected books.
+  if (iaId) {
     return (
       <div className={`w-full h-full bg-[#1C1917] rounded-lg overflow-hidden border transition-all duration-700
         ${focusMode ? 'border-amber-900/50 shadow-[0_0_50px_rgba(217,119,6,0.1)]' : 'border-[var(--border)]'}`}
@@ -65,14 +79,15 @@ export function PdfViewer({ url, iaId, title, onPageChange, focusMode = false, i
       ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/proxy/pdf?url=${encodeURIComponent(url)}`
       : url;
 
-    const loadingTask = pdfjsLib.getDocument(proxyUrl);
+    const loadingTask = getDocument(proxyUrl);
     
     loadingTask.promise.then(
       (pdf) => {
         if (!isMounted) return;
+        const startPage = initialPage || 1;
         setPdfDoc(pdf);
-        setPageNum(1);
-        if (onPageChange) onPageChange(1, pdf.numPages);
+        setPageNum(startPage);
+        if (onPageChange) onPageChange(startPage, pdf.numPages);
         setIsLoading(false);
       },
       (err) => {
@@ -89,8 +104,17 @@ export function PdfViewer({ url, iaId, title, onPageChange, focusMode = false, i
     };
   }, [url]);
 
+  // Initial Jump Logic
+  useEffect(() => {
+    if (pdfDoc && initialPage && initialPage > 1 && !hasInitialJumped) {
+      setPageNum(initialPage);
+      setHasInitialJumped(true);
+      if (onPageChange) onPageChange(initialPage, pdfDoc.numPages);
+    }
+  }, [pdfDoc, initialPage, hasInitialJumped, onPageChange]);
+
   // Render the page
-  const renderPage = (num: number, pdf: pdfjsLib.PDFDocumentProxy) => {
+  const renderPage = useCallback((num: number, pdf: pdfjsLib.PDFDocumentProxy) => {
     setPageRendering(true);
 
     pdf.getPage(num).then((page) => {
@@ -118,6 +142,24 @@ export function PdfViewer({ url, iaId, title, onPageChange, focusMode = false, i
 
       renderTask.promise.then(() => {
         setPageRendering(false);
+        
+        // Render Text Layer
+        if (textLayerRef.current) {
+          textLayerRef.current.innerHTML = '';
+          textLayerRef.current.style.width = `${viewport.width}px`;
+          textLayerRef.current.style.height = `${viewport.height}px`;
+          
+          page.getTextContent().then((textContent) => {
+            // @ts-ignore - API change in PDF.js 4.0+
+            const textLayer = new TextLayer({
+              textContentSource: textContent,
+              container: textLayerRef.current!,
+              viewport: viewport,
+            });
+            textLayer.render();
+          });
+        }
+
         if (pageNumPending !== null) {
           renderPage(pageNumPending, pdf);
           setPageNumPending(null);
@@ -127,7 +169,7 @@ export function PdfViewer({ url, iaId, title, onPageChange, focusMode = false, i
         setPageRendering(false);
       });
     });
-  };
+  }, [scale, pageNumPending]);
 
   useEffect(() => {
     if (pdfDoc) {
@@ -232,42 +274,58 @@ export function PdfViewer({ url, iaId, title, onPageChange, focusMode = false, i
       ${focusMode ? 'border-amber-900/50 shadow-[0_0_50px_rgba(217,119,6,0.1)]' : 'border-[var(--border)]'}`}
     >
       <div className="flex-1 overflow-auto p-4 md:p-8 w-full flex justify-center custom-scrollbar">
-        <canvas ref={canvasRef} className="shadow-2xl bg-white max-w-full" />
+        <div className="relative shadow-2xl rounded-sm overflow-hidden bg-white mx-auto">
+          <canvas ref={canvasRef} className={`block max-w-full h-auto ${darkMode ? 'invert hue-rotate-180' : ''}`} />
+          <div 
+            ref={textLayerRef} 
+            className="textLayer absolute top-0 left-0 right-0 bottom-0 opacity-20 pointer-events-auto"
+            onMouseUp={handleTextSelection}
+          />
+        </div>
       </div>
 
-      {/* Reader Controls */}
-      <div className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-[#0C0A09]/90 backdrop-blur px-6 py-3 rounded-full border border-[var(--border)] flex items-center gap-6 shadow-2xl transition-all duration-300 ${focusMode ? 'opacity-30 hover:opacity-100' : 'opacity-100'}`}>
-        <button 
-          onClick={onPrevPage} 
-          disabled={pageNum <= 1}
-          className="text-[var(--foreground)] hover:text-[var(--primary)] disabled:opacity-30 disabled:hover:text-[var(--foreground)] transition-colors"
-        >
-          ← Prev
-        </button>
-        <span className="font-mono text-[var(--muted)] text-sm">
-          {pageNum} / {pdfDoc?.numPages || '?'}
-        </span>
-        <button 
-          onClick={onNextPage} 
-          disabled={!pdfDoc || pageNum >= pdfDoc.numPages}
-          className="text-[var(--foreground)] hover:text-[var(--primary)] disabled:opacity-30 disabled:hover:text-[var(--foreground)] transition-colors"
-        >
-          Next →
-        </button>
-        <div className="w-px h-4 bg-[var(--border)]"></div>
-        <button 
-          onClick={() => setScale(s => s + 0.2)}
-          className="text-[var(--muted)] hover:text-white transition-colors"
-        >
-          A+
-        </button>
-        <button 
-          onClick={() => setScale(s => Math.max(0.6, s - 0.2))}
-          className="text-[var(--muted)] hover:text-white transition-colors"
-        >
-          A-
-        </button>
-      </div>
+      {/* Reader Controls - Hide if IA Embed is active since it has its own controls */}
+      {!iaId && (
+        <div className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-[#0C0A09]/90 backdrop-blur px-6 py-3 rounded-full border border-[var(--border)] flex items-center gap-6 shadow-2xl transition-all duration-300 ${focusMode ? 'opacity-30 hover:opacity-100' : 'opacity-100'}`}>
+          <button 
+            onClick={onPrevPage} 
+            disabled={pageNum <= 1}
+            className="text-[var(--foreground)] hover:text-[var(--primary)] disabled:opacity-30 disabled:hover:text-[var(--foreground)] transition-colors"
+          >
+            ← Prev
+          </button>
+          <span className="font-mono text-[var(--muted)] text-sm">
+            {pageNum} / {pdfDoc?.numPages || '?'}
+          </span>
+          <button 
+            onClick={onNextPage} 
+            disabled={!pdfDoc || pageNum >= pdfDoc.numPages}
+            className="text-[var(--foreground)] hover:text-[var(--primary)] disabled:opacity-30 disabled:hover:text-[var(--foreground)] transition-colors"
+          >
+            Next →
+          </button>
+          <div className="w-px h-4 bg-[var(--border)]"></div>
+          <button
+            onClick={() => setDarkMode(d => !d)}
+            className={`text-[var(--muted)] hover:text-white transition-colors ${darkMode ? 'text-amber-500' : ''}`}
+            title="Toggle dark mode"
+          >
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+          <button
+            onClick={() => setScale(s => s + 0.2)}
+            className="text-[var(--muted)] hover:text-white transition-colors"
+          >
+            A+
+          </button>
+          <button
+            onClick={() => setScale(s => Math.max(0.6, s - 0.2))}
+            className="text-[var(--muted)] hover:text-white transition-colors"
+          >
+            A-
+          </button>
+        </div>
+      )}
     </div>
   );
 }

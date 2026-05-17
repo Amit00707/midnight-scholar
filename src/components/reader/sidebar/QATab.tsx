@@ -7,9 +7,10 @@ import { useAskDoubt } from '@/lib/hooks/useAI';
 interface QATabProps {
   bookId: string;
   pageNumber: number;
+  selectedText?: string;
 }
 
-export function QATab({ bookId, pageNumber }: QATabProps) {
+export function QATab({ bookId, pageNumber, selectedText }: QATabProps) {
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([
     { role: 'ai', text: 'Hello Scholar! What part of this chapter is confusing you?' }
@@ -24,8 +25,12 @@ export function QATab({ bookId, pageNumber }: QATabProps) {
     setMessages((prev) => [...prev, { role: 'user', text: query }]);
     setQuery('');
 
+    const questionWithContext = selectedText 
+      ? `[Context: ${selectedText}] \nQuestion: ${query}` 
+      : query;
+
     askDoubt(
-      { bookId, pageNumber, question: query },
+      { bookId, pageNumber, question: questionWithContext },
       {
         onSuccess: (data) => {
           setMessages((prev) => [...prev, { role: 'ai', text: data.answer }]);
@@ -45,6 +50,13 @@ export function QATab({ bookId, pageNumber }: QATabProps) {
         </h3>
         <p className="text-xs text-[var(--muted)] mt-1">Contextual AI Assistant</p>
       </div>
+
+      {selectedText && (
+        <div className="mb-4 p-2 bg-[#292524] border border-amber-900/30 rounded text-xs text-amber-200/80 italic">
+          <span className="block font-bold text-amber-500 mb-1">SELECTED CONTEXT:</span>
+          "{selectedText.length > 150 ? selectedText.substring(0, 150) + '...' : selectedText}"
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
         {messages.map((m, i) => (

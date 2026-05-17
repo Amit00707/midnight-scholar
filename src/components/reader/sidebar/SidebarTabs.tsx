@@ -18,11 +18,12 @@ type TabType = 'toc' | 'summary' | 'qa' | 'flashcards' | 'keywords' | 'revision'
 interface SidebarTabsProps {
   bookId: string;
   currentPage: number;
+  selectedText?: string;
   pdfUrl?: string;
   onPageJump?: (page: number) => void;
 }
 
-export function SidebarTabs({ bookId, currentPage, pdfUrl, onPageJump }: SidebarTabsProps) {
+export function SidebarTabs({ bookId, currentPage, selectedText, pdfUrl, onPageJump }: SidebarTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('summary');
 
   const tabs: { id: TabType, label: string, isAI?: boolean }[] = [
@@ -62,12 +63,12 @@ export function SidebarTabs({ bookId, currentPage, pdfUrl, onPageJump }: Sidebar
       {/* Dynamic Content Pane */}
       <div className="flex-1 overflow-y-auto p-4">
         {activeTab === 'summary' && <SummaryTab bookId={bookId} pageNumber={currentPage} />}
-        {activeTab === 'qa' && <QATab bookId={bookId} pageNumber={currentPage} />}
+        {activeTab === 'qa' && <QATab bookId={bookId} pageNumber={currentPage} selectedText={selectedText} />}
         {activeTab === 'flashcards' && <FlashcardsTab bookId={bookId} pageNumber={currentPage} />}
         {activeTab === 'revision' && <RevisionTab />}
         {activeTab === 'keywords' && <KeywordsTab bookId={bookId} pageNumber={currentPage} />}
         {activeTab === 'quiz' && <QuizTab bookId={bookId} pageNumber={currentPage} />}
-        {activeTab === 'notes' && <NotesTab bookId={bookId} pageNumber={currentPage} />}
+        {activeTab === 'notes' && <NotesTab bookId={bookId} pageNumber={currentPage} selectedText={selectedText} />}
         {activeTab === 'bookmarks' && <BookmarksTab bookId={bookId} pageNumber={currentPage} />}
         {activeTab === 'discussion' && <DiscussionTab bookId={bookId} />}
         {activeTab === 'toc' && <TOCTab bookId={bookId} pdfUrl={pdfUrl} currentPage={currentPage} onPageJump={onPageJump} />}

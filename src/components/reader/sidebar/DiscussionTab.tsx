@@ -159,7 +159,6 @@ export function DiscussionTab({ bookId }: DiscussionTabProps) {
           className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-[var(--primary)] text-[#0C0A09] rounded-full hover:scale-110 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="ArrowUp" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
           </svg>
         </button>

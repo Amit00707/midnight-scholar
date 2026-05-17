@@ -116,13 +116,13 @@ async function tryRefreshToken(): Promise<boolean> {
 // Auth
 export const api = {
   login: (email: string, password: string) =>
-    apiFetch<AuthResponse>('/login', {
+    apiFetch<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
 
   signup: (name: string, email: string, password: string, role: string = 'student') =>
-    apiFetch<AuthResponse>('/signup', {
+    apiFetch<AuthResponse>('/auth/signup', {
       method: 'POST',
       body: JSON.stringify({ name, email, password, role }),
     }),
@@ -142,32 +142,35 @@ export const api = {
   getBooksByCategory: (category: string, limit: number = 12) => 
     apiFetch<any>(`/books/category/${category}?limit=${limit}`),
 
-  // Reading Progress
-  getProgress: () => apiFetch<ReadingProgress[]>('/progress'),
+  // Reading Progress (reader endpoints)
+  getProgress: () => apiFetch<ReadingProgress[]>('/reader/progress'),
+  getBookProgress: (bookId: string) => apiFetch<ReadingProgress | null>(`/reader/progress/${bookId}`),
+  getWeakTopics: () => apiFetch<any>('/analytics/weak-topics'),
+  getReadingHabits: () => apiFetch<any>('/analytics/reading-habits'),
   updateProgress: (bookId: string | number, page: number) =>
-    apiFetch('/progress', {
+    apiFetch('/reader/progress', {
       method: 'PATCH',
       body: JSON.stringify({ book_id: String(bookId), current_page: page }),
     }),
 
-  // Notes and Bookmarks
-  getBookmarks: (bookId: string | number) => apiFetch<{ bookmarks: any[] }>(`/bookmarks/${bookId}`),
-  addBookmark: (bookId: string | number, page: number, label: string = '') => 
-    apiFetch('/bookmarks', { method: 'POST', body: JSON.stringify({ book_id: String(bookId), page_number: page, label }) }),
-  deleteBookmark: (bookmarkId: number) => 
-    apiFetch(`/bookmarks/${bookmarkId}`, { method: 'DELETE' }),
-    
-  getNotes: (bookId: string | number) => apiFetch<{ notes: any[] }>(`/notes/${bookId}`),
-  addNote: (bookId: string | number, page: number, content: string) => 
-    apiFetch('/notes', { method: 'POST', body: JSON.stringify({ book_id: String(bookId), page_number: page, content }) }),
-  deleteNote: (noteId: number) => 
-    apiFetch(`/notes/${noteId}`, { method: 'DELETE' }),
+  // Notes and Bookmarks (reader endpoints)
+  getBookmarks: (bookId: string | number) => apiFetch<{ bookmarks: any[] }>(`/reader/bookmarks/${bookId}`),
+  addBookmark: (bookId: string | number, page: number, label: string = '') =>
+    apiFetch('/reader/bookmarks', { method: 'POST', body: JSON.stringify({ book_id: String(bookId), page_number: page, label }) }),
+  deleteBookmark: (bookmarkId: number) =>
+    apiFetch(`/reader/bookmarks/${bookmarkId}`, { method: 'DELETE' }),
+
+  getNotes: (bookId: string | number) => apiFetch<{ notes: any[] }>(`/reader/notes/${bookId}`),
+  addNote: (bookId: string | number, page: number, content: string) =>
+    apiFetch('/reader/notes', { method: 'POST', body: JSON.stringify({ book_id: String(bookId), page_number: page, content }) }),
+  deleteNote: (noteId: number) =>
+    apiFetch(`/reader/notes/${noteId}`, { method: 'DELETE' }),
 
   // Gamification
-  getLeaderboard: () => apiFetch('/leaderboard'),
-  getStreak: () => apiFetch<{ current_streak: number; longest_streak: number }>('/streak'),
-  getBadges: () => apiFetch('/badges'),
-  getPoints: () => apiFetch<{ total_points: number }>('/points'),
+  getLeaderboard: () => apiFetch('/gamification/leaderboard'),
+  getStreak: () => apiFetch<{ current_streak: number; longest_streak: number }>('/gamification/streak'),
+  getBadges: () => apiFetch('/gamification/badges'),
+  getPoints: () => apiFetch<{ total_points: number }>('/gamification/points'),
 
   // Social
   getSocialFeed: () => apiFetch('/feed'),
@@ -222,11 +225,14 @@ export const api = {
     apiFetch(`/classes/${classId}/announce`, { method: 'POST', body: JSON.stringify({ title, content }) }),
   getQuizResults: () => apiFetch<{ results: any[] }>('/quiz-results'),
 
+  // Subscription
+  getPlans: () => apiFetch<{ plans: any[] }>('/plans'),
+
   // ─── Flashcards (SM-2 Spaced Repetition) ───────────────────
-  generateFlashcards: (bookId: string | number, pageNumber: number) =>
+  generateFlashcards: (bookId: string | number, pageNumber: number, context?: string) =>
     apiFetch<any>('/flashcards/generate', {
       method: 'POST',
-      body: JSON.stringify({ book_id: String(bookId), page_number: pageNumber }),
+      body: JSON.stringify({ book_id: String(bookId), page_number: pageNumber, context: context || undefined }),
     }),
 
   getDueFlashcards: (bookId?: string, limit: number = 50) =>

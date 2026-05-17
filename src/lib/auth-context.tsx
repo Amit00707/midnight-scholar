@@ -20,8 +20,8 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; role?: string; error?: string }>;
+  signup: (name: string, email: string, password: string, role?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
 
@@ -58,15 +58,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await api.login(email, password);
       handleAuthResponse(data);
-      return { success: true };
+      return { success: true, role: data.role };
     } catch (err: any) {
       return { success: false, error: err.message || 'Login failed' };
     }
   }, [handleAuthResponse]);
 
-  const signup = useCallback(async (name: string, email: string, password: string) => {
+  const signup = useCallback(async (name: string, email: string, password: string, role: string = 'student') => {
     try {
-      const data = await api.signup(name, email, password);
+      const data = await api.signup(name, email, password, role);
       handleAuthResponse(data);
       return { success: true };
     } catch (err: any) {

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/lib/auth-context';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Clock } from 'lucide-react';
 
 interface UserPreferences {
   aggressiveFlashcards: boolean;
@@ -11,6 +12,8 @@ interface UserPreferences {
   dailyReminder: boolean;
   showStreakNotif: boolean;
   theme: string;
+  timeCommitment: number; // minutes per day
+  timeCommitmentEnabled: boolean;
 }
 
 const DEFAULT_PREFS: UserPreferences = {
@@ -19,6 +22,8 @@ const DEFAULT_PREFS: UserPreferences = {
   dailyReminder: true,
   showStreakNotif: true,
   theme: 'midnight',
+  timeCommitment: 60,
+  timeCommitmentEnabled: false,
 };
 
 export default function SettingsPage() {
@@ -118,6 +123,81 @@ export default function SettingsPage() {
               checked={prefs.showStreakNotif}
               onChange={(val) => updatePref('showStreakNotif', val)}
             />
+          </div>
+        </section>
+
+        {/* Time Commitment */}
+        <section className="bg-[#1C1917] border border-[var(--border)] rounded-2xl p-6">
+          <h2 className="text-xl font-bold text-[var(--foreground)] mb-6 flex items-center gap-2">
+            <span className="text-lg">🎯</span> Time Commitment
+          </h2>
+          <div className="space-y-5">
+            <ToggleRow
+              title="Daily Reading Goal"
+              description="Set a daily time target for your reading sessions."
+              checked={prefs.timeCommitmentEnabled}
+              onChange={(val) => updatePref('timeCommitmentEnabled', val)}
+            />
+
+            {prefs.timeCommitmentEnabled && (
+              <div className="pt-4 border-t border-[var(--border)]">
+                <div className="mb-4">
+                  <h3 className="font-medium text-[var(--foreground)]">Daily Target</h3>
+                  <p className="text-sm text-[var(--muted)]">How much time can you commit daily?</p>
+                </div>
+
+                {/* Time Slider */}
+                <div className="mb-6">
+                  <div className="flex justify-between text-sm text-[var(--muted)] mb-2">
+                    <span>15 min</span>
+                    <span className="text-amber-500 font-bold text-lg">{prefs.timeCommitment} min</span>
+                    <span>4 hr</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="15"
+                    max="240"
+                    step="15"
+                    value={prefs.timeCommitment}
+                    onChange={(e) => updatePref('timeCommitment', parseInt(e.target.value))}
+                    className="w-full h-2 bg-[#0C0A09] rounded-lg appearance-none cursor-pointer accent-amber-500"
+                  />
+                </div>
+
+                {/* Quick Select Buttons */}
+                <div className="grid grid-cols-4 gap-2 mb-4">
+                  {[30, 60, 90, 120].map((mins) => (
+                    <button
+                      key={mins}
+                      onClick={() => updatePref('timeCommitment', mins)}
+                      className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                        prefs.timeCommitment === mins
+                          ? 'bg-amber-600 text-black'
+                          : 'bg-[#0C0A09] border border-[var(--border)] text-[var(--foreground)] hover:border-amber-600/50'
+                      }`}
+                    >
+                      {mins < 60 ? `${mins}m` : `${mins / 60}h`}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom Time Display */}
+                <div className="flex items-center gap-3 p-4 bg-[#0C0A09] rounded-xl border border-[var(--border)]">
+                  <Clock size={20} className="text-amber-500" />
+                  <div>
+                    <p className="text-[var(--foreground)] font-medium">
+                      {prefs.timeCommitment >= 60
+                        ? `${Math.floor(prefs.timeCommitment / 60)} hr ${prefs.timeCommitment % 60 > 0 ? `${prefs.timeCommitment % 60} min` : ''}`
+                        : `${prefs.timeCommitment} minutes`
+                      } per day
+                    </p>
+                    <p className="text-xs text-[var(--muted)]">
+                      Weekly: {Math.round(prefs.timeCommitment * 7 / 60)}h {prefs.timeCommitment * 7 % 60}m
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 

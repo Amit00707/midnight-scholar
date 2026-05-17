@@ -6,9 +6,10 @@ import { api } from '@/lib/api/client';
 interface NotesTabProps {
   bookId: string;
   pageNumber: number;
+  selectedText?: string;
 }
 
-export function NotesTab({ bookId, pageNumber }: NotesTabProps) {
+export function NotesTab({ bookId, pageNumber, selectedText }: NotesTabProps) {
   const [notes, setNotes] = useState<any[]>([]);
   const [newNote, setNewNote] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -68,7 +69,15 @@ export function NotesTab({ bookId, pageNumber }: NotesTabProps) {
           placeholder="What are you thinking?"
           className="w-full bg-[#0C0A09] border border-[var(--border)] rounded-lg p-3 text-sm text-[var(--foreground)] min-h-[100px] focus:outline-none focus:border-[var(--primary)] transition-colors mb-3"
         />
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
+          {selectedText ? (
+            <button
+              onClick={() => setNewNote(prev => prev ? `${prev}\n\n"${selectedText}"` : `"${selectedText}"`)}
+              className="text-xs text-[var(--accent)] hover:underline font-medium"
+            >
+              + Quote Selection
+            </button>
+          ) : <div />}
           <button
             onClick={handleSave}
             disabled={!newNote.trim()}

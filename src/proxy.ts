@@ -21,7 +21,9 @@ export async function proxy(req: NextRequest) {
 
   // 3. Admin specific route guard
   if (pathname.startsWith('/admin')) {
-    if (!token) return NextResponse.redirect(new URL('/login', req.url));
+    if (pathname !== '/admin/login' && !token) {
+      return NextResponse.redirect(new URL('/admin/login', req.url));
+    }
   }
 
   // 4. Prevent authenticated users from seeing auth pages

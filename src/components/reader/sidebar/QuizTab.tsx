@@ -45,6 +45,13 @@ export function QuizTab({ bookId, pageNumber }: QuizTabProps) {
     setSubmitted(true);
   };
 
+  const getCorrectAnswerText = (q: any) => {
+    if (typeof q.correct_answer === 'number') {
+      return q.options[q.correct_answer];
+    }
+    return q.correct_answer;
+  };
+
   return (
     <div className="flex h-full flex-col">
       <div className="mb-6">
@@ -87,7 +94,9 @@ export function QuizTab({ bookId, pageNumber }: QuizTabProps) {
         {questions.length > 0 && (
           <div className="space-y-8">
             {questions.map((q, idx) => {
-              const isCorrect = answers[idx] === q.correct_answer;
+              const correctAnswerText = getCorrectAnswerText(q);
+              const isCorrect = answers[idx] === correctAnswerText;
+              
               return (
                 <div key={idx} className="bg-[#1C1917] p-4 rounded-xl border border-[var(--border)]">
                   <p className="text-[var(--foreground)] font-medium mb-3 text-sm">
@@ -96,7 +105,7 @@ export function QuizTab({ bookId, pageNumber }: QuizTabProps) {
                   <div className="space-y-2">
                     {q.options.map((opt: string) => {
                       const isSelected = answers[idx] === opt;
-                      const isActuallyCorrect = submitted && opt === q.correct_answer;
+                      const isActuallyCorrect = submitted && opt === correctAnswerText;
                       const isWrongChoice = submitted && isSelected && !isCorrect;
                       
                       let btnClass = "w-full text-left p-3 rounded-lg text-sm border transition-colors ";
@@ -156,7 +165,7 @@ export function QuizTab({ bookId, pageNumber }: QuizTabProps) {
             {submitted && (
               <div className="text-center p-4 bg-[#1C1917] rounded-xl border border-[var(--border)]">
                 <p className="font-bold text-[var(--foreground)] mb-1">
-                  You scored {Object.values(answers).filter((a, i) => a === questions[i].correct_answer).length} / {questions.length}
+                  You scored {Object.keys(answers).filter((idx: any) => answers[idx] === getCorrectAnswerText(questions[idx])).length} / {questions.length}
                 </p>
                 <p className="text-xs text-[var(--muted)] mb-3">Wisdom score updated!</p>
                 <button

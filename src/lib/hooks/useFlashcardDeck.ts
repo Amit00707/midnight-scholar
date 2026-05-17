@@ -36,8 +36,8 @@ export function useFlashcardStats() {
 export function useGenerateFlashcards() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ bookId, pageNumber }: { bookId: string | number; pageNumber: number }) =>
-      api.generateFlashcards(bookId, pageNumber),
+    mutationFn: ({ bookId, pageNumber, context }: { bookId: string | number; pageNumber: number; context?: string }) =>
+      api.generateFlashcards(bookId, pageNumber, context),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['flashcards'] });
     },
